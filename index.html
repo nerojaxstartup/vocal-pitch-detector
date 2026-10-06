@@ -67,12 +67,12 @@ canvas { display: block; width: 100%; height: 400px; cursor: pointer; }
 .kb { position: relative; display: flex; height: 124px; min-width: 660px; user-select: none; touch-action: manipulation; }
 .kb button { padding: 0; border-radius: 0 0 4px 4px; }
 .kb .w { flex: 1; min-width: 0; background: var(--text); border: 1px solid #000; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; font-family: var(--mono); font-size: 0.68rem; color: #55524a; }
-.kb .b { position: absolute; top: 0; height: 62%; width: 2.1%; margin-left: -1.05%; background: #000; border: 1px solid #4a4840; z-index: 1; }
+.kb .b { position: absolute; top: 0; height: 62%; width: 2.1%; margin-left: -1.05%; background: #000; border: 1px solid #4a4840; z-index: 1; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; font-family: var(--mono); font-size: 0.56rem; letter-spacing: -0.05em; color: #8d897d; overflow: hidden; }
 .kb .w.out { background: #56544c; color: #1c1c19; }
 .kb .b.out { background: #1c1c19; border-color: #2b2b26; }
 .kb .tgt::after { content: ""; position: absolute; left: 50%; bottom: 22px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 2px #000; }
 .kb .w { position: relative; }
-.kb .b.tgt::after { bottom: 8px; }
+.kb .b.tgt::after { bottom: 22px; }
 .kb .hit { background: var(--yellow-dim); }
 .kb .sung, .kb .w.out.sung, .kb .b.out.sung { background: var(--yellow); border-color: var(--yellow); color: #000; }
 .mode { padding: 18px 20px; display: flex; flex-direction: column; gap: 16px; }
@@ -104,6 +104,7 @@ label.tick input { width: 18px; height: 18px; accent-color: var(--yellow); }
 .score { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
 .score b { color: var(--yellow); font-size: 1.3rem; }
 .seq { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 1.15rem; min-height: 2.2em; align-items: center; }
+.seq:empty { display: none; }
 .seq span { border: 1px solid var(--line); padding: 3px 10px; color: var(--muted); }
 .seq span.done { background: var(--yellow); border-color: var(--yellow); color: var(--black); }
 .seq span.cur { border-color: var(--text); color: var(--text); }
@@ -118,6 +119,7 @@ label.tick input { width: 18px; height: 18px; accent-color: var(--yellow); }
 .scroll { overflow-x: auto; }
 .pcol { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 table { border-collapse: collapse; width: 100%; min-width: 600px; }
+#p-skills { min-width: 520px; }
 th { text-align: left; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--line); }
 td { padding: 9px 14px 9px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
 td.none { color: var(--muted); white-space: normal; }
@@ -166,7 +168,8 @@ footer { color: var(--muted); font-size: 0.85rem; }
   .side .seq span { padding: 2px 7px; }
   .side .meter { height: 44px; }
 }
-@media (min-width: 900px) and (min-height: 540px) and (max-height: 700px) { #m-train.live .tip { display: none; } }
+#m-train.wk #t-settings { display: none; }
+@media (min-width: 900px) and (min-height: 540px) and (max-height: 700px) { #m-train.live .tip { display: none; } #m-train.live.wk .tip { display: block; } }
 @media (max-width: 620px) {
   canvas { height: 300px; }
   .tabs button { font-size: 0.72rem; padding-inline: 2px; letter-spacing: 0.02em; }
@@ -217,12 +220,18 @@ footer { color: var(--muted); font-size: 0.85rem; }
         <div class="big" id="verdict">Waiting for your voice</div>
         <div class="meter"><div class="needle" id="needle"></div></div>
         <div class="scale"><span>-50 flat</span><span>in tune</span><span>sharp +50</span></div>
+        <div class="score" id="live-stats" style="margin-top:10px">Hold a note to measure it.</div>
       </div>
       <div class="grow">
         <div class="cap">Graph view</div>
         <div class="seg" id="view">
           <button type="button" data-view="follow" aria-pressed="true">Follow my voice</button>
           <button type="button" data-view="full" aria-pressed="false">Every note C2 to C6</button>
+        </div>
+        <div class="cap" style="margin-top:14px">Note names</div>
+        <div class="seg" id="names">
+          <button type="button" data-names="sharp" aria-pressed="true">Sharps ♯</button>
+          <button type="button" data-names="flat" aria-pressed="false">Flats ♭</button>
         </div>
         <div class="cap" style="margin-top:14px">Mic level</div>
         <div class="bar thin"><i id="level"></i></div>
@@ -255,10 +264,11 @@ footer { color: var(--muted); font-size: 0.85rem; }
 
   <!-- SINGING LESSONS -->
   <section class="panel mode" id="m-train" hidden>
-    <div class="row">
+    <div class="row" id="t-settings">
       <label class="pick" for="t-ex">Lesson
         <select id="t-ex">
-          <option value="hold">1. Hold steady</option>
+          <option value="siren">Warm-up: siren slide</option>
+          <option value="hold" selected>1. Hold steady</option>
           <option value="match">2. Match a note</option>
           <option value="scale">3. Five-note scale</option>
           <option value="interval">4. Intervals</option>
@@ -276,13 +286,14 @@ footer { color: var(--muted); font-size: 0.85rem; }
       <label class="tick" for="t-show"><input type="checkbox" id="t-show" checked> Show targets</label>
       <label class="tick" for="t-nat"><input type="checkbox" id="t-nat"> No sharps (lessons 1, 2)</label>
     </div>
-    <p class="tip"><b>Coach tip</b><span id="t-tip"></span></p>
+    <p class="tip"><b id="t-tiplabel">Coach tip</b><span id="t-tip"></span></p>
     <div class="big" id="t-title">Ready when you are</div>
     <div class="seq" id="t-seq" aria-live="off"></div>
-    <p class="say" id="t-say">Press Play. You'll hear the notes, then you sing them back and hold each one until the bar fills.</p>
+    <p class="say" id="t-say">Guided workout runs a full session: breathing, a warm-up, then each lesson in turn. About 8 minutes.</p>
     <div class="bar"><i id="t-bar"></i></div>
     <div class="row">
-      <button class="btn solid" id="t-go" type="button">Play</button>
+      <button class="btn solid" id="t-work" type="button">Guided workout</button>
+      <button class="btn" id="t-go" type="button">Play one lesson</button>
       <button class="btn" id="t-replay" type="button" disabled>Hear it again</button>
       <button class="btn quiet" id="t-skip" type="button" disabled>Skip</button>
       <button class="btn quiet" id="t-stop" type="button" disabled>End</button>
@@ -307,6 +318,9 @@ footer { color: var(--muted); font-size: 0.85rem; }
       <p class="say" id="p-status"></p>
     </div>
     <div class="tiles" id="p-tiles"></div>
+    <h2>Your voice, measured</h2>
+    <div class="scroll"><table id="p-skills"></table></div>
+    <p class="say" style="font-size:0.85rem">Scores run from 0 to 100 on this app's own scale. Use them to watch your trend, not as a formal grade.</p>
     <h2>What the numbers say</h2>
     <ul class="facts" id="p-facts"></ul>
     </div>
@@ -324,11 +338,16 @@ footer { color: var(--muted); font-size: 0.85rem; }
 </div>
 
 <script>
-var NOTE = ["C", "C", "D", "D", "E", "F", "F", "G", "G", "A", "A", "B"];
+var SHARP_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
+var FLAT_NAMES = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"];
+var useFlats = false;
+function noteName(k) { return (useFlats ? FLAT_NAMES : SHARP_NAMES)[k]; }
 var SHARP = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0];
 var INTERVALS = ["", "minor second", "major second", "minor third", "major third", "perfect fourth", "tritone", "perfect fifth", "minor sixth", "major sixth", "minor seventh", "major seventh", "octave"];
 var LESSONS = {
-  hold: { name: "Hold a note steady", note: 1.3, need: 4000, tip: "Breathe low into your belly, then let the air out slowly and evenly. A steady breath draws a steady line. Aim to keep the line flat for four seconds." },
+  breath: { name: "Breathing", tip: "Stand tall with loose shoulders and one hand on your belly. Breathe in low for 4 so the hand moves out, then hiss the air out slowly for 8. Three rounds." },
+  siren: { name: "Siren slide", note: 0.5, need: 200, tol: 150, sticky: true, noStats: true, tip: "Glide from your low note up to your high note and back down, like a siren, on \"oo\" or a lip trill. Don't stop on the way. It warms up your whole range gently." },
+  hold: { name: "Hold a note steady", note: 1.3, need: 4000, sticky: true, tip: "Breathe low into your belly, then let the air out slowly and evenly. A steady breath draws a steady line. Aim to keep the line flat for four seconds." },
   match: { name: "Match a note by ear", note: 1.3, need: 700, tip: "Listen to the whole note before you make a sound. Hum it quietly first, then open to an \"ah\". If you miss, slide slowly until the line meets the band." },
   scale: { name: "Five-note scale", note: 0.6, need: 450, tip: "Sing \"do re mi fa sol\" up and back down. Keep each step small and connected, like walking up stairs. Each round starts one note higher." },
   interval: { name: "Intervals", note: 0.9, need: 500, tip: "Two notes. Hear the second note in your head before you leave the first. The name of the jump shows once you match both, so you start to recognise it." },
@@ -370,7 +389,7 @@ function detectPitch(buf, sampleRate) {
   return { freq: sampleRate / lag, clarity: y1, rms: rms };
 }
 function freqToMidi(f, a4) { return 69 + 12 * Math.log2(f / a4); }
-function noteLabel(midi) { var k = ((midi % 12) + 12) % 12; return NOTE[k] + (SHARP[k] ? "♯" : "") + (Math.floor(midi / 12) - 1); }
+function noteLabel(midi) { var k = ((midi % 12) + 12) % 12; return noteName(k) + (Math.floor(midi / 12) - 1); }
 function voiceType(lo, hi) {
   var c = (lo + hi) / 2, types = [["bass", 52], ["baritone", 57], ["tenor", 60], ["alto", 65], ["mezzo-soprano", 69], ["soprano", 72]], best = types[0];
   types.forEach(function (t) { if (Math.abs(t[1] - c) < Math.abs(best[1] - c)) best = t; });
@@ -473,7 +492,7 @@ function voiceType(lo, hi) {
     var el = keyEls[m];
     el.classList.add("hit"); setTimeout(function () { el.classList.remove("hit"); }, 220);
     if (tr.state === "idle" && rt.step === "idle") {
-      pin = { m: m, hold: 0, done: false, clearAt: 0, start: 0, sum: 0, n: 0 };
+      pin = { m: m, hold: 0, done: false, clearAt: 0, start: 0, sum: 0, n: 0, first: 0, abs: 0, sq: 0, msum: 0, mn: 0 };
       kbSay(running ? "Listen to " + noteLabel(m) + ", then sing it back." : noteLabel(m) + ". Press Start mic to sing it back.", false);
       paintKeys();
     }
@@ -488,9 +507,10 @@ function voiceType(lo, hi) {
     var name = noteLabel(pin.m);
     if (!cur) { pin.hold = 0; kbSay("Your turn. Sing " + name + ".", false); return; }
     var diff = cur.midi - pin.m, off = Math.round(Math.abs(diff));
+    if (pin.first && Math.abs(diff) < 1.5) { var pc = diff * 100; pin.abs += Math.abs(pc); pin.sq += pc * pc; pin.msum += pc; pin.mn++; }
     if (Math.abs(diff) * 100 <= Number($("t-tol").value)) {
-      pin.hold += dt; pin.sum += diff * 100; pin.n++; kbSay("That's " + name + ". Hold it\u2026", true);
-      if (pin.hold >= 700) { pin.done = true; pin.clearAt = now + 1800; kbSay("Matched " + name + ".", true); record("piano", true, now - pin.start, pin.sum / pin.n); }
+      pin.hold += dt; pin.sum += diff * 100; pin.n++; if (!pin.first) pin.first = now; kbSay("That's " + name + ". Hold it\u2026", true);
+      if (pin.hold >= 700) { pin.done = true; pin.clearAt = now + 1800; kbSay("Matched " + name + ".", true); record("piano", true, now - pin.start, pin.sum / pin.n, pin.mn > 10 ? { acc: pin.abs / pin.mn, sd: Math.sqrt(Math.max(0, pin.sq / pin.mn - Math.pow(pin.msum / pin.mn, 2))), lock: pin.first - pin.start } : null); }
     } else {
       pin.hold = 0;
       if (off < 1) kbSay(diff < 0 ? "A little flat. Lift it slightly to reach " + name + "." : "A little sharp. Ease it down to " + name + ".", false);
@@ -508,6 +528,9 @@ function voiceType(lo, hi) {
     var mid = userLo === null ? 54 : Math.round((userLo + userHi) / 2), box = $("kbscroll"), el = keyEls[Math.max(LOW, Math.min(HIGH, mid))];
     box.scrollLeft = el.offsetLeft - box.clientWidth / 2;
   }
+  function labelKeys() {
+    for (var m = LOW; m <= HIGH; m++) { var k = m % 12, el = keyEls[m]; el.textContent = k === 0 ? noteLabel(m) : noteName(k); el.setAttribute("aria-label", "Play " + noteLabel(m)); }
+  }
   (function buildKeys() {
     var kb = $("kb"), total = 0, whites = 0, m, k, b;
     for (m = LOW; m <= HIGH; m++) if (!SHARP[m % 12]) total++;
@@ -515,9 +538,10 @@ function voiceType(lo, hi) {
       k = m % 12; b = document.createElement("button");
       b.type = "button"; b.dataset.m = m; b.setAttribute("aria-label", "Play " + noteLabel(m));
       if (SHARP[k]) { b.className = "b"; b.style.left = (whites / total * 100) + "%"; }
-      else { b.className = "w"; if (k === 0) b.textContent = noteLabel(m); whites++; }
+      else { b.className = "w"; whites++; }
       kb.append(b); keyEls[m] = b;
     }
+    labelKeys();
     kb.addEventListener("pointerdown", function (e) { var t = e.target.closest("button"); if (!t) return; e.preventDefault(); press(Number(t.dataset.m)); });
     kb.addEventListener("click", function (e) { var t = e.target.closest("button"); if (t && e.detail === 0) press(Number(t.dataset.m)); });
   })();
@@ -530,6 +554,7 @@ function voiceType(lo, hi) {
 
   /* ---------- note readout and live tuning meter ---------- */
   function target() { return tr.state === "idle" || !tr.seq.length ? null : tr.seq[Math.min(tr.idx, tr.seq.length - 1)]; }
+  function curTol() { return tr.state !== "idle" && LESSONS[tr.ex].tol ? LESSONS[tr.ex].tol : Number($("t-tol").value); }
   function readout() {
     var noteEl = $("note");
     if (!cur) {
@@ -539,7 +564,7 @@ function voiceType(lo, hi) {
       return;
     }
     var c = Math.round(shownCents), tuned = Math.abs(shownCents) <= 10, tg = mode === "train" && tr.state !== "idle" ? target() : pin ? pin.m : null;
-    var lit = tg !== null ? Math.abs(cur.midi - tg) * 100 <= Number($("t-tol").value) : tuned;
+    var lit = tg !== null ? Math.abs(cur.midi - tg) * 100 <= curTol() : tuned;
     noteEl.textContent = noteLabel(cur.nearest);
     noteEl.className = lit ? "tuned" : "";
     $("hz").textContent = cur.freq.toFixed(1) + " Hz · " + (c > 0 ? "+" : "") + c + " cents";
@@ -556,6 +581,7 @@ function voiceType(lo, hi) {
   function showMine() {
     if (userLo === null) { $("mine").textContent = "Not set yet"; $("mine-more").textContent = "Run Find my range, or lessons use C3 to C4."; }
     else { $("mine").textContent = rangeText(userLo, userHi); $("mine-more").textContent = "Closest voice type: " + voiceType(userLo, userHi) + " (a rough guide)."; }
+    $("view").querySelector('[data-view="full"]').textContent = userLo === null ? "Every note C2 to C6" : "My whole range";
     $("lo-sel").value = userLo === null ? "" : String(userLo);
     $("hi-sel").value = userHi === null ? "" : String(userHi);
   }
@@ -605,6 +631,7 @@ function voiceType(lo, hi) {
   }
   function buildRound(ex) {
     var lo = userLo === null ? 48 : userLo, hi = userHi === null ? 60 : userHi, room = hi - lo, root, pat, top, k;
+    if (ex === "siren") return { seq: room >= 4 ? [lo + 1, hi - 1, lo + 1] : [lo, hi, lo], label: "" };
     if (ex === "match") { tr.last = pickFrom(lo, hi); return { seq: [tr.last], label: "" }; }
     if (ex === "hold") { k = Math.floor(room / 4); tr.last = pickFrom(lo + k, hi - k); return { seq: [tr.last], label: "" }; }
     if (ex === "scale" || ex === "arp") {
@@ -639,7 +666,7 @@ function voiceType(lo, hi) {
     $("t-title").textContent = title; $("t-title").className = "big" + (tr.state === "won" ? " tuned" : "");
     $("t-say").textContent = say; $("t-bar").style.width = pct + "%";
     var active = tr.state !== "idle";
-    $("t-go").hidden = active; $("t-replay").disabled = tr.state !== "listening"; $("t-skip").disabled = !(tr.state === "listening" || tr.state === "playing"); $("t-stop").disabled = !active;
+    $("t-go").hidden = $("t-work").hidden = active; $("t-replay").disabled = tr.state !== "listening"; $("t-skip").disabled = !(tr.state === "listening" || tr.state === "playing" || tr.state === "timer"); $("t-stop").disabled = !active;
     $("t-ex").disabled = active; $("m-train").classList.toggle("live", active);
     $("t-ok").textContent = tr.ok; $("t-all").textContent = tr.all; $("t-streak").textContent = tr.streak;
     if (tr.devN > 60) {
@@ -650,23 +677,26 @@ function voiceType(lo, hi) {
   }
   function nextRound() {
     var r = buildRound(tr.ex);
-    tr.seq = r.seq; tr.label = r.label; tr.idx = 0; tr.hold = 0; tr.firstOn = 0; tr.rSum = 0; tr.rN = 0; tr.all++; tr.state = "playing";
+    tr.seq = r.seq; tr.label = r.label; tr.idx = 0; tr.hold = 0; tr.firstOn = 0; tr.rSum = 0; tr.rN = 0; tr.rAbs = 0; tr.rSq = 0; tr.mSum = 0; tr.mN = 0; tr.all++; tr.state = "playing";
     playSeq(tr.seq, LESSONS[tr.ex].note); tr.listenAt = toneUntil;
   }
   async function startTrain() { if (!(await ensureMic())) return; tr.ex = $("t-ex").value; tr.root = null; nextRound(); }
   function endTrain() {
     if (tr.state === "idle") return;
     tr.state = "idle"; tr.seq = [];
-    trainUi("Ready when you are", "Lesson ended. Press Play to go again, or pick another lesson.", 0);
+    var was = wk; wk = null; $("m-train").classList.remove("wk"); $("t-tiplabel").textContent = "Coach tip"; showTip();
+    trainUi("Ready when you are", was ? "Workout stopped at step " + (was.i + 1) + " of " + WORKOUT.length + ". Press Guided workout to start again." : "Lesson ended. Press Play one lesson to go again, or pick another lesson.", 0);
   }
   function win(now) {
     var L = LESSONS[tr.ex], names = tr.seq.map(noteLabel);
     tr.ok++; tr.streak++; tr.state = "won"; tr.nextAt = now + 1700;
-    record(tr.ex, true, now - tr.listenStart, tr.rN ? tr.rSum / tr.rN : null);
+    if (wk) { wk.ok++; wk.all++; }
+    record(tr.ex, true, now - tr.listenStart, tr.rN && !L.noStats ? tr.rSum / tr.rN : null,
+      tr.mN > 10 ? { acc: tr.rAbs / tr.mN, sd: Math.sqrt(Math.max(0, tr.rSq / tr.mN - Math.pow(tr.mSum / tr.mN, 2))), lock: tr.firstOn - tr.listenStart } : null);
     if (tr.ex === "hold") tr.wonText = "Held " + names[0] + ". Steadiness " + Math.min(100, Math.round(L.need / Math.max(L.need, now - tr.firstOn) * 100)) + "%.";
     else if (tr.ex === "interval") tr.wonText = names[0] + " to " + names[1] + ": a " + tr.label + ".";
     else tr.wonText = "Nice. Next one coming up.";
-    if (tr.streak % 5 === 0) {
+    if (!wk && tr.streak % 5 === 0 && ORDER.indexOf(tr.ex) >= 0) {
       var nxt = ORDER[ORDER.indexOf(tr.ex) + 1];
       tr.wonText += " " + tr.streak + " in a row." + (nxt ? " You're ready to try lesson " + (ORDER.indexOf(nxt) + 1) + ": " + LESSONS[nxt].name + "." : " Try a harder exactness setting.");
       tr.nextAt = now + 3200;
@@ -674,41 +704,85 @@ function voiceType(lo, hi) {
   }
   function tickTrain(now, dt) {
     if (tr.state === "idle") return;
-    var L = LESSONS[tr.ex], many = tr.seq.length > 1, tg = target();
+    if (tr.state === "timer") {
+      var el = now - tr.timerStart, ph = el % 12000, cyc = Math.min(3, Math.floor(el / 12000) + 1);
+      trainUi("Breathe", "Round " + cyc + " of 3. " + (ph < 4000 ? "Breathe in low and slow: " + (4 - Math.floor(ph / 1000)) : "Hiss the air out slowly: " + (12 - Math.floor(ph / 1000))), Math.min(100, el / (tr.timerEnd - tr.timerStart) * 100));
+      if (now >= tr.timerEnd) nextStep();
+      return;
+    }
+    var L = LESSONS[tr.ex], many = tr.seq.length > 1, tg = target(), sir = tr.ex === "siren";
     if (tr.state === "playing") {
-      trainUi("Listen…", many ? "Playing " + tr.seq.length + " notes. Get ready to sing them back in order." : "Playing your note. Get ready to sing it back.", 0);
+      trainUi("Listen…", sir ? "Hear your low note, your high note, then low again. Get ready to glide between them." : many ? "Playing " + tr.seq.length + " notes. Get ready to sing them back in order." : "Playing your note. Get ready to sing it back.", 0);
       if (now >= tr.listenAt) { tr.state = "listening"; tr.listenStart = now; }
     } else if (tr.state === "listening") {
-      var where = many ? "Note " + (tr.idx + 1) + " of " + tr.seq.length + ". " : "", say = where + "Your turn. Sing it and hold.", tol = Number($("t-tol").value);
+      var where = many ? "Note " + (tr.idx + 1) + " of " + tr.seq.length + ". " : "", say = where + "Your turn. Sing it and hold.", tol = curTol();
       if (cur) {
         var diff = cur.midi - tg, off = Math.round(Math.abs(diff));
         if (Math.abs(diff) * 100 <= tol) {
           tr.hold += dt; if (!tr.firstOn) tr.firstOn = now;
-          tr.devSum += diff * 100; tr.devN++; tr.rSum += diff * 100; tr.rN++;
+          if (!L.noStats) { tr.devSum += diff * 100; tr.devN++; tr.rSum += diff * 100; tr.rN++; }
           say = where + (tr.ex === "hold" ? "On it. Keep the line flat…" : "That's it. Hold it…");
         } else {
-          if (tr.ex !== "hold") tr.hold = 0;
+          if (!L.sticky) tr.hold = 0;
           if (off < 1) say = where + (diff < 0 ? "A little flat. Lift it slightly." : "A little sharp. Ease it down.");
           else say = where + (diff < 0 ? "Too low. Go up about " : "Too high. Come down about ") + off + (off === 1 ? " semitone." : " semitones.");
         }
       }
+      if (cur && !L.noStats && tr.firstOn && Math.abs(cur.midi - tg) < 1.5) { var c100 = (cur.midi - tg) * 100; tr.rAbs += Math.abs(c100); tr.rSq += c100 * c100; tr.mSum += c100; tr.mN++; }
+      if (sir) say = tr.idx === 0 ? "Start on your low note." : tr.idx === 1 ? "Glide up, all the way to the high note." : "Now glide back down to the low note.";
       if (tr.hold >= L.need) {
         if (tr.idx < tr.seq.length - 1) { tr.idx++; tr.hold = 0; } else win(now);
       }
-      if (tr.state === "listening") trainUi(many ? "Sing them back" : "Sing it back", say, Math.min(100, tr.hold / L.need * 100));
+      if (tr.state === "listening") trainUi(sir ? "Slide" : many ? "Sing them back" : "Sing it back", say, Math.min(100, tr.hold / L.need * 100));
     }
     if (tr.state === "won") {
       trainUi("Matched", tr.wonText, 100);
-      if (now >= tr.nextAt) nextRound();
+      if (now >= tr.nextAt) advance();
     }
   }
   function showTip() { $("t-tip").textContent = LESSONS[$("t-ex").value].tip; }
 
+  /* ---------- guided workout: a full session, run for the singer ---------- */
+  var WORKOUT = [{ ex: "breath", secs: 36 }, { ex: "siren", reps: 3 }, { ex: "hold", reps: 3 }, { ex: "scale", reps: 4 }, { ex: "arp", reps: 3 }, { ex: "match", reps: 5 }, { ex: "echo", reps: 3 }, { ex: "siren", reps: 1 }];
+  var wk = null;
+  function showWk() {
+    var st = WORKOUT[wk.i];
+    $("t-tiplabel").textContent = "Step " + (wk.i + 1) + " of " + WORKOUT.length + (st.reps > 1 ? ", round " + (wk.rep + 1) + " of " + st.reps : "");
+    $("t-tip").textContent = LESSONS[st.ex].name + ". " + LESSONS[st.ex].tip;
+  }
+  function nextStep() {
+    wk.i++; wk.rep = 0;
+    if (wk.i >= WORKOUT.length) { finishWorkout(); return; }
+    var st = WORKOUT[wk.i];
+    tr.ex = st.ex; tr.root = null; showWk();
+    if (st.ex === "breath") { tr.state = "timer"; tr.seq = []; tr.timerStart = performance.now(); tr.timerEnd = tr.timerStart + st.secs * 1000; }
+    else nextRound();
+  }
+  function advance() {
+    if (!wk) { nextRound(); return; }
+    wk.rep++;
+    if (wk.rep >= WORKOUT[wk.i].reps) nextStep(); else { showWk(); nextRound(); }
+  }
+  async function startWorkout() {
+    if (!(await ensureMic())) return;
+    wk = { i: -1, rep: 0, ok: 0, all: 0, start: performance.now() };
+    $("m-train").classList.add("wk");
+    nextStep();
+  }
+  function finishWorkout() {
+    var took = performance.now() - wk.start, mins = Math.max(1, Math.round(took / 60000));
+    var text = "You matched " + wk.ok + " of " + wk.all + " rounds in about " + mins + " min. Come back tomorrow: short daily sessions build a voice faster than long weekly ones.";
+    record("workout", true, took, null, null);
+    wk = null; tr.state = "idle"; tr.seq = [];
+    $("m-train").classList.remove("wk"); $("t-tiplabel").textContent = "Coach tip"; showTip();
+    trainUi("Workout complete", text, 100);
+  }
+
   /* ---------- progress log ----------
      Every lesson round, piano match and range result is logged here. It is kept in a progress file on the
      singer's own disk (vocal-progress.json): opened once per session, then saved into automatically. */
-  var log = { results: [], ranges: [], days: {} }, fileHandle = null, fileName = "", unsaved = 0, saving = false, saveAgain = false, saveTimer = 0, lastSaved = "", voicedPending = 0;
-  var LESSON_NAMES = { piano: "Piano: click and sing" };
+  var log = { results: [], ranges: [], days: {}, sus: {} }, fileHandle = null, fileName = "", unsaved = 0, saving = false, saveAgain = false, saveTimer = 0, lastSaved = "", voicedPending = 0;
+  var LESSON_NAMES = { piano: "Piano: click and sing", siren: "Warm-up: siren slide", workout: "Guided workout" };
   ORDER.forEach(function (k, i) { LESSON_NAMES[k] = (i + 1) + ". " + LESSONS[k].name; });
   var FILE_TYPES = [{ description: "Progress file", accept: { "application/json": [".json"] } }];
   function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
@@ -721,8 +795,10 @@ function voiceType(lo, hi) {
     showStatus();
     if (mode === "progress") renderProgress();
   }
-  function record(ex, ok, ms, dev) {
-    log.results.push({ t: Date.now(), ex: ex, ok: ok ? 1 : 0, tol: Number($("t-tol").value), ms: ms === null ? null : Math.round(ms), dev: dev === null ? null : Math.round(dev * 10) / 10 });
+  function r1(x) { return Math.round(x * 10) / 10; }
+  function record(ex, ok, ms, dev, mt) {
+    log.results.push({ t: Date.now(), ex: ex, ok: ok ? 1 : 0, tol: Number($("t-tol").value), ms: ms === null ? null : Math.round(ms), dev: dev === null ? null : r1(dev),
+      acc: mt ? r1(mt.acc) : null, sd: mt ? r1(mt.sd) : null, lock: mt ? Math.max(0, Math.round(mt.lock)) : null });
     if (log.results.length > 20000) log.results.splice(0, log.results.length - 20000);
     changed();
   }
@@ -732,7 +808,7 @@ function voiceType(lo, hi) {
     log.ranges.push({ t: Date.now(), lo: lo, hi: hi });
     changed();
   }
-  function serialise() { return JSON.stringify({ app: "vocal-pitch-detector", version: 1, saved: new Date().toISOString(), results: log.results, ranges: log.ranges, days: log.days }); }
+  function serialise() { return JSON.stringify({ app: "vocal-pitch-detector", version: 1, saved: new Date().toISOString(), results: log.results, ranges: log.ranges, days: log.days, sus: log.sus }); }
   function mergeIn(data) {
     if (!data || data.app !== "vocal-pitch-detector" || !Array.isArray(data.results)) throw new Error("not a progress file");
     var seen = {}, haveDay = {};
@@ -740,7 +816,7 @@ function voiceType(lo, hi) {
     data.results.forEach(function (r) {
       if (!r || !num(r.t) || typeof r.ex !== "string" || !has(LESSON_NAMES, r.ex) || seen[r.t + "|" + r.ex]) return;
       seen[r.t + "|" + r.ex] = 1;
-      log.results.push({ t: r.t, ex: r.ex, ok: r.ok ? 1 : 0, tol: num(r.tol) ? r.tol : 30, ms: num(r.ms) ? r.ms : null, dev: num(r.dev) ? r.dev : null });
+      log.results.push({ t: r.t, ex: r.ex, ok: r.ok ? 1 : 0, tol: num(r.tol) ? r.tol : 30, ms: num(r.ms) ? r.ms : null, dev: num(r.dev) ? r.dev : null, acc: num(r.acc) ? r.acc : null, sd: num(r.sd) ? r.sd : null, lock: num(r.lock) ? r.lock : null });
     });
     log.results.sort(function (a, b) { return a.t - b.t; });
     log.ranges.forEach(function (r) { haveDay[dayKey(r.t)] = 1; });
@@ -749,6 +825,8 @@ function voiceType(lo, hi) {
       haveDay[dayKey(r.t)] = 1; log.ranges.push({ t: r.t, lo: Math.round(r.lo), hi: Math.round(r.hi) });
     });
     log.ranges.sort(function (a, b) { return a.t - b.t; });
+    var sus = data.sus && typeof data.sus === "object" ? data.sus : {};
+    Object.keys(sus).forEach(function (k) { if (/^\d{4}-\d\d-\d\d$/.test(k) && num(sus[k])) log.sus[k] = Math.max(log.sus[k] || 0, sus[k]); });
     var days = data.days && typeof data.days === "object" ? data.days : {};
     Object.keys(days).forEach(function (k) { if (/^\d{4}-\d\d-\d\d$/.test(k) && num(days[k])) log.days[k] = Math.max(log.days[k] || 0, days[k]); });
   }
@@ -841,7 +919,7 @@ function voiceType(lo, hi) {
     });
   }
   function renderProgress() {
-    var res = log.results, byDay = {}, voiced = 0, facts = [], i;
+    var res = log.results.filter(function (r) { return r.ex !== "workout"; }), workouts = log.results.length - res.length, byDay = {}, voiced = 0, facts = [], i;
     res.forEach(function (r) { var k = dayKey(r.t); (byDay[k] = byDay[k] || []).push(r); });
     Object.keys(log.days).forEach(function (k) { voiced += log.days[k]; if (log.days[k] >= 30000 && !byDay[k]) byDay[k] = []; });
     var keys = Object.keys(byDay).sort(), all = stats(res);
@@ -882,6 +960,21 @@ function voiceType(lo, hi) {
         : "Your range is " + Math.abs(grow) + (Math.abs(grow) === 1 ? " semitone " : " semitones ") + (grow > 0 ? "wider" : "narrower") + " than on " + dayLabel(dayKey(first.t)) + ". Range shifts a little day to day, so watch the trend.");
     }
     if (streak >= 2) facts.push("You've practised " + streak + " days in a row.");
+    if (workouts) facts.push("Guided workouts completed: " + workouts + ".");
+
+    var clamp = function (x) { return Math.max(0, Math.min(100, x)); }, avgOf = function (f) { var t = 0, n = 0; res.forEach(function (r) { if (num(r[f])) { t += r[f]; n++; } }); return n ? t / n : null; };
+    var meter = function (score) { return bar(0, clamp(score), "", Math.round(clamp(score)) + " / 100"); };
+    var acc = avgOf("acc"), sdv = avgOf("sd"), locks = res.filter(function (r) { return num(r.lock); }).map(function (r) { return r.lock; }).sort(function (a, b) { return a - b; });
+    var lock = locks.length ? locks[locks.length >> 1] / 1000 : null, bestSus = 0, rg = log.ranges.length ? log.ranges[log.ranges.length - 1] : userLo !== null ? { lo: userLo, hi: userHi } : null;
+    Object.keys(log.sus).forEach(function (k) { bestSus = Math.max(bestSus, log.sus[k]); });
+    table("p-skills", ["Skill", "Score", "What was measured"], [
+      ["Pitch accuracy", acc === null ? "\u2013" : meter(100 - acc * 1.5), acc === null ? "No lesson rounds yet" : "On average " + Math.round(acc) + " cents off the note"],
+      ["Steadiness", sdv === null ? "\u2013" : meter(100 - sdv * 2.5), sdv === null ? "No lesson rounds yet" : "Wobble of \u00b1" + Math.round(sdv) + " cents while holding"],
+      ["Finding the note", lock === null ? "\u2013" : meter(100 - (lock - 0.3) / 3.7 * 100), lock === null ? "No lesson rounds yet" : lock.toFixed(1) + " s to land on it"],
+      ["Hitting targets", all.n ? meter(all.rate * 100) : "\u2013", all.n ? all.ok + " of " + all.n + " rounds matched" : "No lesson rounds yet"],
+      ["Breath", bestSus ? meter(bestSus / 15000 * 100) : "\u2013", bestSus ? "Longest single note " + (bestSus / 1000).toFixed(1) + " s" : "Hold one note for a second or more"],
+      ["Range", rg ? meter((rg.hi - rg.lo) / 24 * 100) : "\u2013", rg ? rangeText(rg.lo, rg.hi) : "Run My range to measure it"]
+    ], "");
     var ul = $("p-facts"); ul.replaceChildren();
     facts.forEach(function (f) { var li = document.createElement("li"); li.textContent = f; ul.append(li); });
 
@@ -891,7 +984,7 @@ function voiceType(lo, hi) {
     });
     table("p-days", ["Day", "Rounds", "Matched", "Average pitch", "Time singing"], dayRows, "Nothing logged yet.");
     var lessonRows = [];
-    ORDER.concat(["piano"]).forEach(function (k) {
+    ["siren"].concat(ORDER, ["piano"]).forEach(function (k) {
       var st = stats(res.filter(function (r) { return r.ex === k; }));
       if (st.n) lessonRows.push([LESSON_NAMES[k], String(st.n), rateBar(st), st.ms === null ? "\u2013" : (st.ms / 1000).toFixed(1) + " s", devBar(st.dev)]);
     });
@@ -909,13 +1002,14 @@ function voiceType(lo, hi) {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
     var full = view === "full" && mode !== "train", pad = 46;
-    var span = full ? HIGH - LOW + 2 : 16, mid = full ? (LOW + HIGH) / 2 : center, step = h / span;
+    var fLo = userLo === null ? LOW : userLo - 1, fHi = userHi === null ? HIGH : userHi + 1;
+    var span = full ? fHi - fLo + 2 : 16, mid = full ? (fLo + fHi) / 2 : center, step = h / span;
     lastMid = mid; lastStep = step;
     var yOf = function (m) { return h / 2 - (m - mid) * step; };
-    g.font = "12px Consolas, Menlo, monospace"; g.textBaseline = "middle"; g.textAlign = "left"; g.lineWidth = 1; g.setLineDash([]);
+    g.font = (step >= 13 ? "12px" : "10px") + " Consolas, Menlo, monospace"; g.textBaseline = "middle"; g.textAlign = "left"; g.lineWidth = 1; g.setLineDash([]);
 
     if (mode === "train" && tr.state !== "idle" && $("t-show").checked) {
-      var tol = Number($("t-tol").value) / 100, tg = target();
+      var tol = curTol() / 100, tg = target();
       tr.seq.forEach(function (m) {
         g.fillStyle = m === tg ? "rgba(255, 212, 0, 0.22)" : "rgba(255, 212, 0, 0.07)";
         g.fillRect(pad, yOf(m + tol), w - pad, 2 * tol * step);
@@ -928,10 +1022,10 @@ function voiceType(lo, hi) {
     }
     for (var m = Math.ceil(mid - span / 2); m <= Math.floor(mid + span / 2); m++) {
       var k = ((m % 12) + 12) % 12, y = Math.round(yOf(m)) + 0.5;
-      if (full && SHARP[k]) continue;
-      g.strokeStyle = k === 0 ? "#6b6650" : SHARP[k] ? "#191917" : "#33332d";
+      if (SHARP[k] && step < 9) continue;
+      g.strokeStyle = k === 0 ? "#6b6650" : SHARP[k] ? "#232320" : "#33332d";
       g.beginPath(); g.moveTo(pad, y); g.lineTo(w, y); g.stroke();
-      if (full ? (k === 0 || k === 7) : !SHARP[k]) { g.fillStyle = k === 0 ? "#f4f1e4" : "#9c988b"; g.fillText(noteLabel(m), 8, y); }
+      if (step >= 10.5 || k === 0 || k === 7) { g.fillStyle = k === 0 ? "#f4f1e4" : SHARP[k] ? "#77736a" : "#9c988b"; g.fillText(noteLabel(m), 8, y); }
     }
     if (userLo !== null) {
       g.setLineDash([6, 6]); g.strokeStyle = "#9c988b"; g.fillStyle = "#9c988b"; g.textAlign = "right";
@@ -962,6 +1056,32 @@ function voiceType(lo, hi) {
     if (last && now - last.t < 120) { g.fillStyle = "#ffd400"; g.beginPath(); g.arc(last.x, last.y, 5, 0, Math.PI * 2); g.fill(); }
   }
 
+  /* ---------- measuring the note being held ---------- */
+  var lastLive = 0;
+  function endRun() {
+    if (stableNote === null) return;
+    var dur = lastHeard - stableSince, k = dayKey(Date.now());
+    if (dur > 1000 && dur > (log.sus[k] || 0)) { log.sus[k] = Math.round(dur); voicedPending = 20000; }
+  }
+  function liveStats(now) {
+    if (now - lastLive < 200) return;
+    lastLive = now;
+    if (!cur || stableNote === null || now - stableSince < 600) return;
+    var vals = [], i, mean = 0, sq = 0;
+    for (i = hist.length - 1; i >= 0 && hist[i].t >= stableSince; i--) if (hist[i].m !== null) vals.push((hist[i].m - stableNote) * 100);
+    if (vals.length < 20) return;
+    vals.forEach(function (v) { mean += v; }); mean /= vals.length;
+    vals.forEach(function (v) { sq += (v - mean) * (v - mean); });
+    var sd = Math.sqrt(sq / vals.length), cross = 0, side = 0;
+    for (i = 0; i < vals.length; i++) {
+      var v = vals[i] - mean;
+      if (v > 6 && side <= 0) { if (side < 0) cross++; side = 1; } else if (v < -6 && side >= 0) { if (side > 0) cross++; side = -1; }
+    }
+    var secs = (now - stableSince) / 1000, rate = cross / 2 / Math.min(secs, WINDOW_MS / 1000);
+    var vib = secs >= 1.2 && rate >= 4 && rate <= 8 && sd >= 10 && sd <= 80;
+    $("live-stats").textContent = "Held " + secs.toFixed(1) + " s \u00b7 " + (vib ? "vibrato, about " + rate.toFixed(1) + " a second" : "wobble \u00b1" + Math.round(sd) + " cents") + " \u00b7 " + devText(mean);
+  }
+
   /* ---------- main loop ---------- */
   function frame() {
     if (!running) return;
@@ -984,14 +1104,14 @@ function voiceType(lo, hi) {
       log.days[dk] = (log.days[dk] || 0) + dt; voicedPending += dt;
       if (voicedPending > 15000) { voicedPending = 0; if (fileHandle) { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 600); } }
       hist.push({ t: now, m: sm });
-      if (stableNote !== nearest) { stableNote = nearest; stableSince = now; }
+      if (stableNote !== nearest) { endRun(); stableNote = nearest; stableSince = now; }
       else if (now - stableSince >= 250) {
         if (sesLo === null || nearest < sesLo) { sesLo = nearest; showSession(); }
         if (sesHi === null || nearest > sesHi) { sesHi = nearest; showSession(); }
       }
     } else {
       hist.push({ t: now, m: null });
-      if (now - lastHeard > 250) { recent.length = 0; cur = null; stableNote = null; }
+      if (now - lastHeard > 250) { endRun(); recent.length = 0; cur = null; stableNote = null; }
     }
     while (hist.length && now - hist[0].t > WINDOW_MS) hist.shift();
 
@@ -1005,7 +1125,7 @@ function voiceType(lo, hi) {
     }
     if (aim !== null) center += (aim - center) * 0.06;
 
-    tickRange(now); tickTrain(now, dt); tickPin(now, dt);
+    tickRange(now); tickTrain(now, dt); tickPin(now, dt); liveStats(now);
     readout(); paintKeys(); draw(now);
   }
 
@@ -1033,6 +1153,14 @@ function voiceType(lo, hi) {
     var r = cv.getBoundingClientRect(), m = Math.round(lastMid - (e.clientY - r.top - r.height / 2) / lastStep);
     press(m);
   });
+  $("names").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    useFlats = b.dataset.names === "flat";
+    $("names").querySelectorAll("button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+    labelKeys(); showMine(); showSession();
+    ["lo-sel", "hi-sel"].forEach(function (id) { $(id).querySelectorAll("option").forEach(function (o) { if (o.value) o.textContent = noteLabel(Number(o.value)); }); });
+    draw(performance.now());
+  });
   $("use-ses").addEventListener("click", function () { if (sesLo !== null && sesHi - sesLo >= 2) setRange(sesLo, sesHi); });
   $("clear-ses").addEventListener("click", function () { sesLo = sesHi = null; showSession(); });
   $("r-go").addEventListener("click", function () { if (rt.step === "low" || rt.step === "high") endRange(); else startRange(); });
@@ -1052,7 +1180,14 @@ function voiceType(lo, hi) {
   window.addEventListener("beforeunload", function (e) { if (unsaved) { e.preventDefault(); e.returnValue = ""; } });
   $("t-ex").addEventListener("change", showTip);
   $("t-replay").addEventListener("click", function () { if (tr.state !== "listening") return; tr.idx = 0; tr.hold = 0; tr.firstOn = 0; tr.state = "playing"; playSeq(tr.seq, LESSONS[tr.ex].note); tr.listenAt = toneUntil; });
-  $("t-skip").addEventListener("click", function () { if (tr.state === "idle" || tr.state === "won") return; tr.streak = 0; record(tr.ex, false, null, null); nextRound(); });
+  $("t-skip").addEventListener("click", function () {
+    if (tr.state === "idle" || tr.state === "won") return;
+    if (tr.state === "timer") { nextStep(); return; }
+    tr.streak = 0; record(tr.ex, false, null, null, null);
+    if (wk) wk.all++;
+    advance();
+  });
+  $("t-work").addEventListener("click", startWorkout);
   $("t-stop").addEventListener("click", endTrain);
   $("a4").addEventListener("change", function () { var v = Number(this.value); if (!(v >= 415 && v <= 466)) v = 440; this.value = v; a4 = v; });
 
