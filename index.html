@@ -34,6 +34,9 @@ button, input, select { font: inherit; }
 button { cursor: pointer; }
 .btn { background: transparent; color: var(--yellow); border: 2px solid var(--yellow); padding: 10px 20px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .btn:hover { background: var(--yellow); color: var(--black); }
+a.btn { text-decoration: none; display: inline-block; }
+.acts { display: flex; flex-wrap: wrap; gap: 10px; }
+.acts .btn { white-space: nowrap; }
 .btn.solid { background: var(--yellow); color: var(--black); }
 .btn.solid:hover { background: var(--text); border-color: var(--text); }
 .btn.quiet { border-color: var(--line); color: var(--text); }
@@ -181,7 +184,10 @@ footer { color: var(--muted); font-size: 0.85rem; }
       <button type="button" role="tab" data-mode="train" aria-selected="false">Lessons</button>
       <button type="button" role="tab" data-mode="progress" aria-selected="false" id="tab-progress">Progress</button>
     </nav>
-    <button class="btn solid" id="go" type="button">Start mic</button>
+    <div class="acts">
+      <a class="btn quiet" href="https://buymeacoffee.com/nerojax" target="_blank" rel="noopener">Buy me a coffee</a>
+      <button class="btn solid" id="go" type="button">Start mic</button>
+    </div>
   </header>
 
   <div class="err" id="err" role="alert" hidden></div>
