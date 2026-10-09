@@ -7,14 +7,14 @@
 <style>
 /* Layout: one black instrument panel. Hazard-stripe header, three mode tabs, then a tall live pitch graph
    with the current note floating at the top. The panel under the graph changes with the mode
-   (live tuning meter / range finder / singing lessons). Green is the only colour. */
+   (live tuning meter / range finder / singing lessons). Blue is the only colour. */
 :root {
   color-scheme: dark;
   --black: #0b0b0a;
   --panel: #151513;
   --line: #2b2b26;
-  --accent: #2fe067;
-  --accent-dim: #17702f;
+  --accent: #3aa0ff;
+  --accent-dim: #14508f;
   --text: #f4f1e4;
   --muted: #9c988b;
   --display: Bahnschrift, "DIN Alternate", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
@@ -200,7 +200,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
   <section class="panel graph" id="graph">
     <canvas id="cv" aria-label="Your pitch over the last ten seconds, drawn against the notes of the scale. Click to hear a note."></canvas>
     <div class="now"><b id="note">–</b><div id="hz">&nbsp;</div></div>
-    <div class="hint" id="hint">Press Start mic and sing. Your pitch draws here as a green line. Play any note on the piano below.</div>
+    <div class="hint" id="hint">Press Start mic and sing. Your pitch draws here as a blue line. Play any note on the piano below.</div>
   </section>
 
   <section class="panel keys" id="keys" aria-label="Piano, C2 to C6">
@@ -225,8 +225,8 @@ footer { color: var(--muted); font-size: 0.85rem; }
       <div class="grow">
         <div class="cap">Graph view</div>
         <div class="seg" id="view">
-          <button type="button" data-view="follow" aria-pressed="true">Follow my voice</button>
-          <button type="button" data-view="full" aria-pressed="false">Every note C2 to C6</button>
+          <button type="button" data-view="follow" aria-pressed="false">Follow my voice</button>
+          <button type="button" data-view="full" aria-pressed="true">Every note C2 to C6</button>
         </div>
         <div class="cap" style="margin-top:14px">Note names</div>
         <div class="seg" id="names">
@@ -400,7 +400,7 @@ function voiceType(lo, hi) {
   var $ = function (id) { return document.getElementById(id); };
   var cv = $("cv"), g = cv.getContext("2d");
   var audio = null, analyser = null, source = null, stream = null, buf = null, running = false, raf = 0;
-  var a4 = 440, mode = "monitor", view = "follow", recent = [], hist = [], lastHeard = 0, lastFrame = 0, center = 60, shownCents = 0;
+  var a4 = 440, mode = "monitor", view = "full", recent = [], hist = [], lastHeard = 0, lastFrame = 0, center = 60, shownCents = 0;
   var cur = null, stableNote = null, stableSince = 0, toneUntil = 0, heard = null, lastMid = 60, lastStep = 25;
   var sesLo = null, sesHi = null, userLo = null, userHi = null;
   var WINDOW_MS = 10000, LOW = 36, HIGH = 84, STEP_MS = 7000;
@@ -1001,31 +1001,34 @@ function voiceType(lo, hi) {
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
-    var full = view === "full" && mode !== "train", pad = 46;
+    var full = view === "full" && mode !== "train";
     var fLo = userLo === null ? LOW : userLo - 1, fHi = userHi === null ? HIGH : userHi + 1;
     var span = full ? fHi - fLo + 2 : 16, mid = full ? (fLo + fHi) / 2 : center, step = h / span;
     lastMid = mid; lastStep = step;
+    /* Every note gets a line and a name. When rows are tight the names step across columns so none overlap. */
+    var cols = Math.max(1, Math.min(5, Math.ceil(11 / step))), pad = 18 + cols * 28;
     var yOf = function (m) { return h / 2 - (m - mid) * step; };
     g.font = (step >= 13 ? "12px" : "10px") + " Consolas, Menlo, monospace"; g.textBaseline = "middle"; g.textAlign = "left"; g.lineWidth = 1; g.setLineDash([]);
 
     if (mode === "train" && tr.state !== "idle" && $("t-show").checked) {
       var tol = curTol() / 100, tg = target();
       tr.seq.forEach(function (m) {
-        g.fillStyle = m === tg ? "rgba(47, 224, 103, 0.22)" : "rgba(47, 224, 103, 0.07)";
+        g.fillStyle = m === tg ? "rgba(58, 160, 255, 0.22)" : "rgba(58, 160, 255, 0.07)";
         g.fillRect(pad, yOf(m + tol), w - pad, 2 * tol * step);
       });
     }
     if (pin && tr.state === "idle") {
       var ptol = Math.max(Number($("t-tol").value) / 100, full ? 0.5 : 0);
-      g.fillStyle = "rgba(47, 224, 103, 0.22)";
+      g.fillStyle = "rgba(58, 160, 255, 0.22)";
       g.fillRect(pad, yOf(pin.m + ptol), w - pad, 2 * ptol * step);
     }
     for (var m = Math.ceil(mid - span / 2); m <= Math.floor(mid + span / 2); m++) {
       var k = ((m % 12) + 12) % 12, y = Math.round(yOf(m)) + 0.5;
-      if (SHARP[k] && step < 9) continue;
+      if (y < 6 || y > h - 6) continue;
+      var lx = 8 + (((m % cols) + cols) % cols) * 28;
       g.strokeStyle = k === 0 ? "#6b6650" : SHARP[k] ? "#232320" : "#33332d";
-      g.beginPath(); g.moveTo(pad, y); g.lineTo(w, y); g.stroke();
-      if (step >= 10.5 || k === 0 || k === 7) { g.fillStyle = k === 0 ? "#f4f1e4" : SHARP[k] ? "#77736a" : "#9c988b"; g.fillText(noteLabel(m), 8, y); }
+      g.beginPath(); g.moveTo(cols === 1 ? pad : lx + 26, y); g.lineTo(w, y); g.stroke();
+      g.fillStyle = k === 0 ? "#f4f1e4" : SHARP[k] ? "#77736a" : "#9c988b"; g.fillText(noteLabel(m), lx, y);
     }
     if (userLo !== null) {
       g.setLineDash([6, 6]); g.strokeStyle = "#9c988b"; g.fillStyle = "#9c988b"; g.textAlign = "right";
@@ -1042,7 +1045,7 @@ function voiceType(lo, hi) {
       g.strokeStyle = "#f4f1e4"; g.lineWidth = 2; g.beginPath(); g.moveTo(pad, hy); g.lineTo(w, hy); g.stroke();
       g.fillStyle = "#f4f1e4"; g.textAlign = "right"; g.fillText("playing " + noteLabel(heard.m), w - 8, hy - 10); g.textAlign = "left";
     }
-    g.strokeStyle = "#2fe067"; g.lineWidth = 2.5; g.lineJoin = "round"; g.lineCap = "round";
+    g.strokeStyle = "#3aa0ff"; g.lineWidth = 2.5; g.lineJoin = "round"; g.lineCap = "round";
     var prev = null, last = null;
     g.beginPath();
     for (var i = 0; i < hist.length; i++) {
@@ -1053,7 +1056,7 @@ function voiceType(lo, hi) {
       prev = pt; last = { x: x, y: yy2, t: pt.t };
     }
     g.stroke();
-    if (last && now - last.t < 120) { g.fillStyle = "#2fe067"; g.beginPath(); g.arc(last.x, last.y, 5, 0, Math.PI * 2); g.fill(); }
+    if (last && now - last.t < 120) { g.fillStyle = "#3aa0ff"; g.beginPath(); g.arc(last.x, last.y, 5, 0, Math.PI * 2); g.fill(); }
   }
 
   /* ---------- measuring the note being held ---------- */
